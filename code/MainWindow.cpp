@@ -2,24 +2,23 @@
 #include "ui_MainWindow.h"
 #include <QWebEngineFindTextResult>
 #include <QWebEngineProfile>
+#include <QApplication>
+#include <QScreen>
+#include <QTabBar>
+#include <QToolButton>
 #include "BrowserCore.h"
+#include "BrowserTabWidget.h"
+
 
 using namespace Qt::StringLiterals;
 
 
-MainWindow::MainWindow(BrowserCore *browser, QWebEngineProfile *profile, bool forDevTools)
-    :m_browser(browser),
-    m_profile(profile),
+MainWindow::MainWindow(QWidget *parent)
+    :QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
-    setAttribute(Qt::WA_DeleteOnClose, true);
-    setFocusPolicy(Qt::ClickFocus);
-
-    if(!forDevTools){
-        ui->m_progress_bar->setMaximumHeight(1);
-        ui->m_progress_bar->setTextVisible(false);
-        ui->m_progress_bar->setStyleSheet(u"QProgressBar {border: 0px} QProgressBar::chunk {background-color: #da4453}"_s);
-    }
+    ui->setupUi(this);
+    Initialize();
 
 }
 
@@ -28,17 +27,18 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-QSize MainWindow::sizeHint() const
+void MainWindow::Initialize()
 {
+    QToolButton *plus_btn = new QToolButton();
+    plus_btn->setText("+");
+    auto default_tab = new BrowserTabWidget(this);
+    default_tab->setFrameShape(QFrame::Shape::Panel);
+    m_tabs.append(default_tab);
 
-}
+    QHBoxLayout* layout_tabs = new QHBoxLayout();
+    ui->frame_tabs->setLayout(layout_tabs);
 
-QTabWidget *MainWindow::GetTabWidget() const
-{
-
-}
-
-WebView *MainWindow::GetCurrentTab() const
-{
-
+    layout_tabs->addWidget(default_tab);
+    layout_tabs->addWidget(plus_btn);
+    layout_tabs->addSpacerItem(new QSpacerItem(10, 10, QSizePolicy::Expanding, QSizePolicy::Minimum));
 }

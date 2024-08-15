@@ -8,27 +8,21 @@
 namespace Ui {
 class MainWindow;
 }
-class BrowserCore;
-class WebView;
+
+class BrowserTabWidget;
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit MainWindow(BrowserCore *browser, QWebEngineProfile* profile,
-                        bool forDevTools = false);
+    explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
-    QSize sizeHint() const override;
-
-    QTabWidget* GetTabWidget() const;
-    WebView* GetCurrentTab() const;
-    BrowserCore* GetBrowser() {return m_browser;}
 
 private:
-    BrowserCore* m_browser;
-    QWebEngineProfile* m_profile;
     Ui::MainWindow *ui;
+    QList<BrowserTabWidget*> m_tabs;
+    void Initialize();
 };
 
 #endif // MAINWINDOW_H
