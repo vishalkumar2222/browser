@@ -1,14 +1,14 @@
 #ifndef WEBPAGE_H
 #define WEBPAGE_H
 
-#include <QWidget>
+#include <QWebEnginePage>
 
-class WebPage : public QWidget
+class WebPage : public QWebEnginePage
 {
     Q_OBJECT
 
 public:
-    explicit WebPage(QWidget *parent = nullptr);
+    explicit WebPage(QObject *parent = nullptr);
     ~WebPage();
 
 private:
