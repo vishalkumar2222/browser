@@ -1,15 +1,12 @@
-// Copyright (C) 2016 The Qt Company Ltd.
-// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
-
-#include "browser.h"
-#include "browserwindow.h"
-#include "tabwidget.h"
-#include "webpage.h"
-#include "webpopupwindow.h"
-#include "webview.h"
-#include "ui_certificateerrordialog.h"
-#include "ui_passworddialog.h"
-#include "webauthdialog.h"
+#include "Browser.h"
+#include "BrowserWindow.h"
+#include "TabWidget.h"
+#include "WebPage.h"
+#include "WebPopUpWindow.h"
+#include "WebView.h"
+#include "CertificateDialog.h"
+#include "PasswordDialog.h"
+#include "WebAuthDialog.h"
 #include <QContextMenuEvent>
 #include <QDebug>
 #include <QMenu>
@@ -18,24 +15,22 @@
 #include <QTimer>
 #include <QStyle>
 
-using namespace Qt::StringLiterals;
-
 WebView::WebView(QWidget *parent)
     : QWebEngineView(parent)
 {
     connect(this, &QWebEngineView::loadStarted, [this]() {
-        m_loadProgress = 0;
-        emit favIconChanged(favIcon());
+        mLoadProgress = 0;
+        emit FavIconChanged(FavIcon());
     });
     connect(this, &QWebEngineView::loadProgress, [this](int progress) {
-        m_loadProgress = progress;
+        mLoadProgress = progress;
     });
     connect(this, &QWebEngineView::loadFinished, [this](bool success) {
-        m_loadProgress = success ? 100 : -1;
-        emit favIconChanged(favIcon());
+        mLoadProgress = success ? 100 : -1;
+        emit FavIconChanged(FavIcon());
     });
     connect(this, &QWebEngineView::iconChanged, [this](const QIcon &) {
-        emit favIconChanged(favIcon());
+        emit FavIconChanged(FavIcon());
     });
 
     connect(this, &QWebEngineView::renderProcessTerminated,
@@ -65,10 +60,10 @@ WebView::WebView(QWidget *parent)
 
 WebView::~WebView()
 {
-    if (m_imageAnimationGroup)
-        delete m_imageAnimationGroup;
+    if (mImageAnimationGroup)
+        delete mImageAnimationGroup;
 
-    m_imageAnimationGroup = nullptr;
+    mImageAnimationGroup = nullptr;
 }
 
 inline QString questionForPermissionType(QWebEnginePermission::PermissionType permissionType)
@@ -100,82 +95,82 @@ inline QString questionForPermissionType(QWebEnginePermission::PermissionType pe
     return QString();
 }
 
-void WebView::setPage(WebPage *page)
+void WebView::SetPage(WebPage *page)
 {
     if (auto oldPage = qobject_cast<WebPage *>(QWebEngineView::page())) {
-        disconnect(oldPage, &WebPage::createCertificateErrorDialog, this,
-                   &WebView::handleCertificateError);
+        disconnect(oldPage, &WebPage::CreateCertificateErrorDialog, this,
+                   &WebView::HandleCertificateError);
         disconnect(oldPage, &QWebEnginePage::authenticationRequired, this,
-                   &WebView::handleAuthenticationRequired);
+                   &WebView::HandleAuthenticationRequired);
         disconnect(oldPage, &QWebEnginePage::permissionRequested, this,
-                   &WebView::handlePermissionRequested);
+                   &WebView::HandlePermissionRequested);
         disconnect(oldPage, &QWebEnginePage::proxyAuthenticationRequired, this,
-                   &WebView::handleProxyAuthenticationRequired);
+                   &WebView::HandleProxyAuthenticationRequired);
         disconnect(oldPage, &QWebEnginePage::registerProtocolHandlerRequested, this,
-                   &WebView::handleRegisterProtocolHandlerRequested);
+                   &WebView::HandleRegisterProtocolHandlerRequested);
         disconnect(oldPage, &QWebEnginePage::webAuthUxRequested, this,
-                   &WebView::handleWebAuthUxRequested);
+                   &WebView::HandleWebAuthUxRequested);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
         disconnect(oldPage, &QWebEnginePage::fileSystemAccessRequested, this,
-                   &WebView::handleFileSystemAccessRequested);
+                   &WebView::HandleFileSystemAccessRequested);
 #endif
     }
-    createWebActionTrigger(page,QWebEnginePage::Forward);
-    createWebActionTrigger(page,QWebEnginePage::Back);
-    createWebActionTrigger(page,QWebEnginePage::Reload);
-    createWebActionTrigger(page,QWebEnginePage::Stop);
+    CreateWebActionTrigger(page,QWebEnginePage::Forward);
+    CreateWebActionTrigger(page,QWebEnginePage::Back);
+    CreateWebActionTrigger(page,QWebEnginePage::Reload);
+    CreateWebActionTrigger(page,QWebEnginePage::Stop);
     QWebEngineView::setPage(page);
-    connect(page, &WebPage::createCertificateErrorDialog, this, &WebView::handleCertificateError);
+    connect(page, &WebPage::CreateCertificateErrorDialog, this, &WebView::HandleCertificateError);
     connect(page, &QWebEnginePage::authenticationRequired, this,
-            &WebView::handleAuthenticationRequired);
+            &WebView::HandleAuthenticationRequired);
     connect(page, &QWebEnginePage::permissionRequested, this,
-            &WebView::handlePermissionRequested);
+            &WebView::HandlePermissionRequested);
     connect(page, &QWebEnginePage::proxyAuthenticationRequired, this,
-            &WebView::handleProxyAuthenticationRequired);
+            &WebView::HandleProxyAuthenticationRequired);
     connect(page, &QWebEnginePage::registerProtocolHandlerRequested, this,
-            &WebView::handleRegisterProtocolHandlerRequested);
+            &WebView::HandleRegisterProtocolHandlerRequested);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
     connect(page, &QWebEnginePage::fileSystemAccessRequested, this,
-            &WebView::handleFileSystemAccessRequested);
+            &WebView::HandleFileSystemAccessRequested);
 #endif
-    connect(page, &QWebEnginePage::webAuthUxRequested, this, &WebView::handleWebAuthUxRequested);
+    connect(page, &QWebEnginePage::webAuthUxRequested, this, &WebView::HandleWebAuthUxRequested);
 }
 
-int WebView::loadProgress() const
+int WebView::LoadProgress() const
 {
-    return m_loadProgress;
+    return mLoadProgress;
 }
 
-void WebView::createWebActionTrigger(QWebEnginePage *page, QWebEnginePage::WebAction webAction)
+void WebView::CreateWebActionTrigger(QWebEnginePage *page, QWebEnginePage::WebAction webAction)
 {
     QAction *action = page->action(webAction);
     connect(action, &QAction::changed, [this, action, webAction]{
-        emit webActionEnabledChanged(webAction, action->isEnabled());
+        emit WebActionEnabledChanged(webAction, action->isEnabled());
     });
 }
 
-bool WebView::isWebActionEnabled(QWebEnginePage::WebAction webAction) const
+bool WebView::IsWebActionEnabled(QWebEnginePage::WebAction webAction) const
 {
     return page()->action(webAction)->isEnabled();
 }
 
-QIcon WebView::favIcon() const
+QIcon WebView::FavIcon() const
 {
     QIcon favIcon = icon();
     if (!favIcon.isNull())
         return favIcon;
 
-    if (m_loadProgress < 0) {
-        static QIcon errorIcon(u":dialog-error.png"_s);
+    if (mLoadProgress < 0) {
+        static QIcon errorIcon(":dialog-error.png");
         return errorIcon;
     }
-    if (m_loadProgress < 100) {
+    if (mLoadProgress < 100) {
         static QIcon loadingIcon = QIcon::fromTheme(QIcon::ThemeIcon::ViewRefresh,
-                                                    QIcon(":view-refresh.png"_L1));
+                                                    QIcon(":view-refresh.png"));
         return loadingIcon;
     }
 
-    static QIcon defaultIcon(u":text-html.png"_s);
+    static QIcon defaultIcon(":text-html.png");
     return defaultIcon;
 }
 
@@ -187,18 +182,18 @@ QWebEngineView *WebView::createWindow(QWebEnginePage::WebWindowType type)
 
     switch (type) {
     case QWebEnginePage::WebBrowserTab: {
-        return mainWindow->tabWidget()->createTab();
+        return mainWindow->GetTabWidget()->CreateTab();
     }
     case QWebEnginePage::WebBrowserBackgroundTab: {
-        return mainWindow->tabWidget()->createBackgroundTab();
+        return mainWindow->GetTabWidget()->CreateBackgroundTab();
     }
     case QWebEnginePage::WebBrowserWindow: {
-        return mainWindow->browser()->createWindow()->currentTab();
+        return mainWindow->GetBrowser()->CreateWindow()->GetCurrentTab();
     }
     case QWebEnginePage::WebDialog: {
         WebPopupWindow *popup = new WebPopupWindow(page()->profile());
-        connect(popup->view(), &WebView::devToolsRequested, this, &WebView::devToolsRequested);
-        return popup->view();
+        connect(popup->View(), &WebView::DevToolsRequested, this, &WebView::DevToolsRequested);
+        return popup->View();
     }
     }
     return nullptr;
@@ -215,7 +210,7 @@ void WebView::contextMenuEvent(QContextMenuEvent *event)
             menu->addSeparator();
 
         QAction *action = menu->addAction("Open inspector in new window");
-        connect(action, &QAction::triggered, [this]() { emit devToolsRequested(page()); });
+        connect(action, &QAction::triggered, [this]() { emit DevToolsRequested(page()); });
     } else {
         (*inspectElement)->setText(tr("Inspect element"));
     }
@@ -223,27 +218,27 @@ void WebView::contextMenuEvent(QContextMenuEvent *event)
     // add conext menu for image policy
     QMenu *editImageAnimation = new QMenu(tr("Image animation policy"));
 
-    m_imageAnimationGroup = new QActionGroup(editImageAnimation);
-    m_imageAnimationGroup->setExclusive(true);
+    mImageAnimationGroup = new QActionGroup(editImageAnimation);
+    mImageAnimationGroup->setExclusive(true);
 
     QAction *disableImageAnimation =
             editImageAnimation->addAction(tr("Disable all image animation"));
     disableImageAnimation->setCheckable(true);
-    m_imageAnimationGroup->addAction(disableImageAnimation);
+    mImageAnimationGroup->addAction(disableImageAnimation);
     connect(disableImageAnimation, &QAction::triggered, [this]() {
-        handleImageAnimationPolicyChange(QWebEngineSettings::ImageAnimationPolicy::Disallow);
+        HandleImageAnimationPolicyChange(QWebEngineSettings::ImageAnimationPolicy::Disallow);
     });
     QAction *allowImageAnimationOnce =
             editImageAnimation->addAction(tr("Allow animated images, but only once"));
     allowImageAnimationOnce->setCheckable(true);
-    m_imageAnimationGroup->addAction(allowImageAnimationOnce);
+    mImageAnimationGroup->addAction(allowImageAnimationOnce);
     connect(allowImageAnimationOnce, &QAction::triggered,
-            [this]() { handleImageAnimationPolicyChange(QWebEngineSettings::ImageAnimationPolicy::AnimateOnce); });
+            [this]() { HandleImageAnimationPolicyChange(QWebEngineSettings::ImageAnimationPolicy::AnimateOnce); });
     QAction *allowImageAnimation = editImageAnimation->addAction(tr("Allow all animated images"));
     allowImageAnimation->setCheckable(true);
-    m_imageAnimationGroup->addAction(allowImageAnimation);
+    mImageAnimationGroup->addAction(allowImageAnimation);
     connect(allowImageAnimation, &QAction::triggered, [this]() {
-        handleImageAnimationPolicyChange(QWebEngineSettings::ImageAnimationPolicy::Allow);
+        HandleImageAnimationPolicyChange(QWebEngineSettings::ImageAnimationPolicy::Allow);
     });
 
     switch (page()->settings()->imageAnimationPolicy()) {
@@ -265,18 +260,18 @@ void WebView::contextMenuEvent(QContextMenuEvent *event)
     menu->popup(event->globalPos());
 }
 
-void WebView::handleCertificateError(QWebEngineCertificateError error)
+void WebView::HandleCertificateError(QWebEngineCertificateError error)
 {
     QDialog dialog(window());
     dialog.setModal(true);
     dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
-    Ui::CertificateErrorDialog certificateDialog;
-    certificateDialog.setupUi(&dialog);
-    certificateDialog.m_iconLabel->setText(QString());
+    CertificateDialog certificateDialog;
+    certificateDialog.Initialize(&dialog);
+    certificateDialog.mIconLabel->setText(QString());
     QIcon icon(window()->style()->standardIcon(QStyle::SP_MessageBoxWarning, 0, window()));
-    certificateDialog.m_iconLabel->setPixmap(icon.pixmap(32, 32));
-    certificateDialog.m_errorLabel->setText(error.description());
+    certificateDialog.mIconLabel->setPixmap(icon.pixmap(32, 32));
+    certificateDialog.mErrorLabel->setText(error.description());
     dialog.setWindowTitle(tr("Certificate Error"));
 
     if (dialog.exec() == QDialog::Accepted)
@@ -285,35 +280,34 @@ void WebView::handleCertificateError(QWebEngineCertificateError error)
         error.rejectCertificate();
 }
 
-void WebView::handleAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth)
+void WebView::HandleAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth)
 {
     QDialog dialog(window());
     dialog.setModal(true);
     dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
-    Ui::PasswordDialog passwordDialog;
-    passwordDialog.setupUi(&dialog);
-
-    passwordDialog.m_iconLabel->setText(QString());
+    PasswordDialog passwordDialog;
+	passwordDialog.Initialize(&dialog);
+    passwordDialog.mIconLabel->setText(QString());
     QIcon icon(window()->style()->standardIcon(QStyle::SP_MessageBoxQuestion, 0, window()));
-    passwordDialog.m_iconLabel->setPixmap(icon.pixmap(32, 32));
+    passwordDialog.mIconLabel->setPixmap(icon.pixmap(32, 32));
 
     QString introMessage(tr("Enter username and password for \"%1\" at %2")
                                  .arg(auth->realm(),
                                       requestUrl.toString().toHtmlEscaped()));
-    passwordDialog.m_infoLabel->setText(introMessage);
-    passwordDialog.m_infoLabel->setWordWrap(true);
+    passwordDialog.mInfoLabel->setText(introMessage);
+    passwordDialog.mInfoLabel->setWordWrap(true);
 
     if (dialog.exec() == QDialog::Accepted) {
-        auth->setUser(passwordDialog.m_userNameLineEdit->text());
-        auth->setPassword(passwordDialog.m_passwordLineEdit->text());
+        auth->setUser(passwordDialog.mUserNameLineEdit->text());
+        auth->setPassword(passwordDialog.mPasswordLineEdit->text());
     } else {
         // Set authenticator null if dialog is cancelled
         *auth = QAuthenticator();
     }
 }
 
-void WebView::handlePermissionRequested(QWebEnginePermission permission)
+void WebView::HandlePermissionRequested(QWebEnginePermission permission)
 {
     QString title = tr("Permission Request");
     QString question = questionForPermissionType(permission.permissionType()).arg(permission.origin().host());
@@ -323,62 +317,60 @@ void WebView::handlePermissionRequested(QWebEnginePermission permission)
         permission.deny();
 }
 
-void WebView::handleProxyAuthenticationRequired(const QUrl &, QAuthenticator *auth,
+void WebView::HandleProxyAuthenticationRequired(const QUrl &, QAuthenticator *auth,
                                                 const QString &proxyHost)
 {
     QDialog dialog(window());
     dialog.setModal(true);
     dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
-    Ui::PasswordDialog passwordDialog;
-    passwordDialog.setupUi(&dialog);
-
-    passwordDialog.m_iconLabel->setText(QString());
+    PasswordDialog passwordDialog;
+	passwordDialog.Initialize(&dialog);
+    passwordDialog.mIconLabel->setText(QString());
     QIcon icon(window()->style()->standardIcon(QStyle::SP_MessageBoxQuestion, 0, window()));
-    passwordDialog.m_iconLabel->setPixmap(icon.pixmap(32, 32));
+    passwordDialog.mIconLabel->setPixmap(icon.pixmap(32, 32));
 
     QString introMessage = tr("Connect to proxy \"%1\" using:");
     introMessage = introMessage.arg(proxyHost.toHtmlEscaped());
-    passwordDialog.m_infoLabel->setText(introMessage);
-    passwordDialog.m_infoLabel->setWordWrap(true);
+    passwordDialog.mInfoLabel->setText(introMessage);
+    passwordDialog.mInfoLabel->setWordWrap(true);
 
     if (dialog.exec() == QDialog::Accepted) {
-        auth->setUser(passwordDialog.m_userNameLineEdit->text());
-        auth->setPassword(passwordDialog.m_passwordLineEdit->text());
+        auth->setUser(passwordDialog.mUserNameLineEdit->text());
+        auth->setPassword(passwordDialog.mPasswordLineEdit->text());
     } else {
         // Set authenticator null if dialog is cancelled
         *auth = QAuthenticator();
     }
 }
 
-void WebView::handleWebAuthUxRequested(QWebEngineWebAuthUxRequest *request)
+void WebView::HandleWebAuthUxRequested(QWebEngineWebAuthUxRequest *request)
 {
-    if (m_authDialog)
-        delete m_authDialog;
+    if (mAuthDialog)
+        delete mAuthDialog;
 
-    m_authDialog = new WebAuthDialog(request, window());
-    m_authDialog->setModal(false);
-    m_authDialog->setWindowFlags(m_authDialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
+    mAuthDialog = new WebAuthDialog(request, window());
+    mAuthDialog->setModal(false);
+    mAuthDialog->setWindowFlags(mAuthDialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
-    connect(request, &QWebEngineWebAuthUxRequest::stateChanged, this, &WebView::onStateChanged);
-    m_authDialog->show();
+    connect(request, &QWebEngineWebAuthUxRequest::stateChanged, this, &WebView::OnStateChanged);
+    mAuthDialog->show();
 }
 
-void WebView::onStateChanged(QWebEngineWebAuthUxRequest::WebAuthUxState state)
+void WebView::OnStateChanged(QWebEngineWebAuthUxRequest::WebAuthUxState state)
 {
     if (QWebEngineWebAuthUxRequest::WebAuthUxState::Completed == state
         || QWebEngineWebAuthUxRequest::WebAuthUxState::Cancelled == state) {
-        if (m_authDialog) {
-            delete m_authDialog;
-            m_authDialog = nullptr;
+        if (mAuthDialog) {
+            delete mAuthDialog;
+            mAuthDialog = nullptr;
         }
     } else {
-        m_authDialog->updateDisplay();
+        mAuthDialog->UpdateDisplay();
     }
 }
 
-//! [registerProtocolHandlerRequested]
-void WebView::handleRegisterProtocolHandlerRequested(
+void WebView::HandleRegisterProtocolHandlerRequested(
         QWebEngineRegisterProtocolHandlerRequest request)
 {
     auto answer = QMessageBox::question(window(), tr("Permission Request"),
@@ -393,7 +385,7 @@ void WebView::handleRegisterProtocolHandlerRequested(
 //! [registerProtocolHandlerRequested]
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
-void WebView::handleFileSystemAccessRequested(QWebEngineFileSystemAccessRequest request)
+void WebView::HandleFileSystemAccessRequested(QWebEngineFileSystemAccessRequest request)
 {
     QString accessType;
     switch (request.accessFlags()) {
@@ -421,7 +413,7 @@ void WebView::handleFileSystemAccessRequested(QWebEngineFileSystemAccessRequest 
         request.reject();
 }
 
-void WebView::handleImageAnimationPolicyChange(QWebEngineSettings::ImageAnimationPolicy policy)
+void WebView::HandleImageAnimationPolicyChange(QWebEngineSettings::ImageAnimationPolicy policy)
 {
     if (!page())
         return;

@@ -1,10 +1,6 @@
-// Copyright (C) 2016 The Qt Company Ltd.
-// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
+#pragma once
 
-#ifndef BROWSER_H
-#define BROWSER_H
-
-#include "downloadmanagerwidget.h"
+#include "DownloadManagerWidget.h"
 
 #include <QList>
 #include <QWebEngineProfile>
@@ -16,17 +12,16 @@ class Browser
 public:
     Browser();
 
-    QList<BrowserWindow*> windows() { return m_windows; }
+    QList<BrowserWindow*> GetWindows() { return mWindows; }
 
-    BrowserWindow *createHiddenWindow(bool offTheRecord = false);
-    BrowserWindow *createWindow(bool offTheRecord = false);
-    BrowserWindow *createDevToolsWindow();
+    BrowserWindow *CreateHiddenWindow(bool offTheRecord = false);
+    BrowserWindow *CreateWindow(bool offTheRecord = false);
+    BrowserWindow *CreateDevToolsWindow();
 
-    DownloadManagerWidget &downloadManagerWidget() { return m_downloadManagerWidget; }
+    DownloadManagerWidget &GetDownloadManagerWidget() { return mDownloadManagerWidget; }
 
 private:
-    QList<BrowserWindow*> m_windows;
-    DownloadManagerWidget m_downloadManagerWidget;
-    QScopedPointer<QWebEngineProfile> m_profile;
+    QList<BrowserWindow*> mWindows;
+    DownloadManagerWidget mDownloadManagerWidget;
+    QScopedPointer<QWebEngineProfile> mProfile;
 };
-#endif // BROWSER_H

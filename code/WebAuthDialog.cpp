@@ -1,7 +1,4 @@
-// Copyright (C) 2023 The Qt Company Ltd.
-// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
-
-#include "webauthdialog.h"
+#include "WebAuthDialog.h"
 
 #include <QVBoxLayout>
 #include <QRadioButton>
@@ -11,38 +8,38 @@
 #include <QWebEngineView>
 
 WebAuthDialog::WebAuthDialog(QWebEngineWebAuthUxRequest *request, QWidget *parent)
-    : QDialog(parent), uxRequest(request), uiWebAuthDialog(new Ui::WebAuthDialog)
+    : QDialog(parent), UxRequest(request), mWebAuthDialog(new WebAuthWindowDialog)
 {
-    uiWebAuthDialog->setupUi(this);
+    mWebAuthDialog->Initialize(this);
 
-    buttonGroup = new QButtonGroup(this);
-    buttonGroup->setExclusive(true);
+    ButtonGroup = new QButtonGroup(this);
+    ButtonGroup->setExclusive(true);
 
-    scrollArea = new QScrollArea(this);
-    selectAccountWidget = new QWidget(this);
-    scrollArea->setWidget(selectAccountWidget);
-    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    selectAccountWidget->resize(400, 150);
-    selectAccountLayout = new QVBoxLayout(selectAccountWidget);
-    uiWebAuthDialog->m_mainVerticalLayout->addWidget(scrollArea);
-    selectAccountLayout->setAlignment(Qt::AlignTop);
+    ScrollArea = new QScrollArea(this);
+    SelectAccountWidget = new QWidget(this);
+    ScrollArea->setWidget(SelectAccountWidget);
+    ScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    ScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    SelectAccountWidget->resize(400, 150);
+    SelectAccountLayout = new QVBoxLayout(SelectAccountWidget);
+    mWebAuthDialog->mMainVerticalLayout->addWidget(ScrollArea);
+    SelectAccountLayout->setAlignment(Qt::AlignTop);
 
-    updateDisplay();
+    UpdateDisplay();
 
-    connect(uiWebAuthDialog->buttonBox, &QDialogButtonBox::rejected, this,
+    connect(mWebAuthDialog->mButtonBox, &QDialogButtonBox::rejected, this,
             qOverload<>(&WebAuthDialog::onCancelRequest));
 
-    connect(uiWebAuthDialog->buttonBox, &QDialogButtonBox::accepted, this,
+    connect(mWebAuthDialog->mButtonBox, &QDialogButtonBox::accepted, this,
             qOverload<>(&WebAuthDialog::onAcceptRequest));
-    QAbstractButton *button = uiWebAuthDialog->buttonBox->button(QDialogButtonBox::Retry);
+    QAbstractButton *button = mWebAuthDialog->mButtonBox->button(QDialogButtonBox::Retry);
     connect(button, &QAbstractButton::clicked, this, qOverload<>(&WebAuthDialog::onRetry));
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
 }
 
 WebAuthDialog::~WebAuthDialog()
 {
-    QList<QAbstractButton *> buttons = buttonGroup->buttons();
+    QList<QAbstractButton *> buttons = ButtonGroup->buttons();
     auto itr = buttons.begin();
     while (itr != buttons.end()) {
         QAbstractButton *radioButton = *itr;
@@ -50,26 +47,25 @@ WebAuthDialog::~WebAuthDialog()
         itr++;
     }
 
-    if (buttonGroup) {
-        delete buttonGroup;
-        buttonGroup = nullptr;
+    if (ButtonGroup) {
+        delete ButtonGroup;
+        ButtonGroup = nullptr;
     }
 
-    if (uiWebAuthDialog) {
-        delete uiWebAuthDialog;
-        uiWebAuthDialog = nullptr;
+    if (mWebAuthDialog) {
+        delete mWebAuthDialog;
+        mWebAuthDialog = nullptr;
     }
 
-    // selectAccountWidget and it's children will get deleted when scroll area is destroyed
-    if (scrollArea) {
-        delete scrollArea;
-        scrollArea = nullptr;
+    if (ScrollArea) {
+        delete ScrollArea;
+        ScrollArea = nullptr;
     }
 }
 
-void WebAuthDialog::updateDisplay()
+void WebAuthDialog::UpdateDisplay()
 {
-    switch (uxRequest->state()) {
+    switch (UxRequest->state()) {
     case QWebEngineWebAuthUxRequest::WebAuthUxState::SelectAccount:
         setupSelectAccountUI();
         break;
@@ -88,74 +84,78 @@ void WebAuthDialog::updateDisplay()
     adjustSize();
 }
 
+void WebAuthDialog::Initialize()
+{
+}
+
 void WebAuthDialog::setupSelectAccountUI()
 {
-    uiWebAuthDialog->m_headingLabel->setText(tr("Choose a Passkey"));
-    uiWebAuthDialog->m_description->setText(tr("Which passkey do you want to use for ")
-                                            + uxRequest->relyingPartyId() + tr("? "));
-    uiWebAuthDialog->m_pinGroupBox->setVisible(false);
-    uiWebAuthDialog->m_mainVerticalLayout->removeWidget(uiWebAuthDialog->m_pinGroupBox);
-    uiWebAuthDialog->buttonBox->button(QDialogButtonBox::Retry)->setVisible(false);
+    mWebAuthDialog->mHeadingLabel->setText(tr("Choose a Passkey"));
+    mWebAuthDialog->mDescription->setText(tr("Which passkey do you want to use for ")
+                                            + UxRequest->relyingPartyId() + tr("? "));
+    mWebAuthDialog->mPinGroupBox->setVisible(false);
+    mWebAuthDialog->mMainVerticalLayout->removeWidget(mWebAuthDialog->mPinGroupBox);
+    mWebAuthDialog->mButtonBox->button(QDialogButtonBox::Retry)->setVisible(false);
 
     clearSelectAccountButtons();
-    scrollArea->setVisible(true);
-    selectAccountWidget->resize(this->width(), this->height());
-    QStringList userNames = uxRequest->userNames();
+    ScrollArea->setVisible(true);
+    SelectAccountWidget->resize(this->width(), this->height());
+    QStringList userNames = UxRequest->userNames();
     // Create radio buttons for each name
     for (const QString &name : userNames) {
         QRadioButton *radioButton = new QRadioButton(name);
-        selectAccountLayout->addWidget(radioButton);
-        buttonGroup->addButton(radioButton);
+        SelectAccountLayout->addWidget(radioButton);
+        ButtonGroup->addButton(radioButton);
     }
 
-    uiWebAuthDialog->buttonBox->button(QDialogButtonBox::Ok)->setText(tr("Ok"));
-    uiWebAuthDialog->buttonBox->button(QDialogButtonBox::Ok)->setVisible(true);
-    uiWebAuthDialog->buttonBox->button(QDialogButtonBox::Cancel)->setVisible(true);
-    uiWebAuthDialog->buttonBox->button(QDialogButtonBox::Retry)->setVisible(false);
+    mWebAuthDialog->mButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Ok"));
+    mWebAuthDialog->mButtonBox->button(QDialogButtonBox::Ok)->setVisible(true);
+    mWebAuthDialog->mButtonBox->button(QDialogButtonBox::Cancel)->setVisible(true);
+    mWebAuthDialog->mButtonBox->button(QDialogButtonBox::Retry)->setVisible(false);
 }
 
 void WebAuthDialog::setupFinishCollectTokenUI()
 {
     clearSelectAccountButtons();
-    uiWebAuthDialog->m_headingLabel->setText(tr("Use your security key with")
-                                             + uxRequest->relyingPartyId());
-    uiWebAuthDialog->m_description->setText(
+    mWebAuthDialog->mHeadingLabel->setText(tr("Use your security key with")
+                                             + UxRequest->relyingPartyId());
+    mWebAuthDialog->mDescription->setText(
             tr("Touch your security key again to complete the request."));
-    uiWebAuthDialog->m_pinGroupBox->setVisible(false);
-    uiWebAuthDialog->buttonBox->button(QDialogButtonBox::Ok)->setVisible(false);
-    uiWebAuthDialog->buttonBox->button(QDialogButtonBox::Retry)->setVisible(false);
-    scrollArea->setVisible(false);
+    mWebAuthDialog->mPinGroupBox->setVisible(false);
+    mWebAuthDialog->mButtonBox->button(QDialogButtonBox::Ok)->setVisible(false);
+    mWebAuthDialog->mButtonBox->button(QDialogButtonBox::Retry)->setVisible(false);
+    ScrollArea->setVisible(false);
 }
 void WebAuthDialog::setupCollectPinUI()
 {
     clearSelectAccountButtons();
-    uiWebAuthDialog->m_mainVerticalLayout->addWidget(uiWebAuthDialog->m_pinGroupBox);
-    uiWebAuthDialog->m_pinGroupBox->setVisible(true);
-    uiWebAuthDialog->m_confirmPinLabel->setVisible(false);
-    uiWebAuthDialog->m_confirmPinLineEdit->setVisible(false);
-    uiWebAuthDialog->buttonBox->button(QDialogButtonBox::Ok)->setText(tr("Next"));
-    uiWebAuthDialog->buttonBox->button(QDialogButtonBox::Ok)->setVisible(true);
-    uiWebAuthDialog->buttonBox->button(QDialogButtonBox::Cancel)->setVisible(true);
-    uiWebAuthDialog->buttonBox->button(QDialogButtonBox::Retry)->setVisible(false);
-    scrollArea->setVisible(false);
+    mWebAuthDialog->mMainVerticalLayout->addWidget(mWebAuthDialog->mPinGroupBox);
+    mWebAuthDialog->mPinGroupBox->setVisible(true);
+    mWebAuthDialog->mConfirmPinLabel->setVisible(false);
+    mWebAuthDialog->mConfirmPinLineEdit->setVisible(false);
+    mWebAuthDialog->mButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Next"));
+    mWebAuthDialog->mButtonBox->button(QDialogButtonBox::Ok)->setVisible(true);
+    mWebAuthDialog->mButtonBox->button(QDialogButtonBox::Cancel)->setVisible(true);
+    mWebAuthDialog->mButtonBox->button(QDialogButtonBox::Retry)->setVisible(false);
+    ScrollArea->setVisible(false);
 
-    QWebEngineWebAuthPinRequest pinRequestInfo = uxRequest->pinRequest();
+    QWebEngineWebAuthPinRequest pinRequestInfo = UxRequest->pinRequest();
 
     if (pinRequestInfo.reason == QWebEngineWebAuthUxRequest::PinEntryReason::Challenge) {
-        uiWebAuthDialog->m_headingLabel->setText(tr("PIN Required"));
-        uiWebAuthDialog->m_description->setText(tr("Enter the PIN for your security key"));
-        uiWebAuthDialog->m_confirmPinLabel->setVisible(false);
-        uiWebAuthDialog->m_confirmPinLineEdit->setVisible(false);
+        mWebAuthDialog->mHeadingLabel->setText(tr("PIN Required"));
+        mWebAuthDialog->mDescription->setText(tr("Enter the PIN for your security key"));
+        mWebAuthDialog->mConfirmPinLabel->setVisible(false);
+        mWebAuthDialog->mConfirmPinLineEdit->setVisible(false);
     } else {
         if (pinRequestInfo.reason == QWebEngineWebAuthUxRequest::PinEntryReason::Set) {
-            uiWebAuthDialog->m_headingLabel->setText(tr("New PIN Required"));
-            uiWebAuthDialog->m_description->setText(tr("Set new PIN for your security key"));
+            mWebAuthDialog->mHeadingLabel->setText(tr("New PIN Required"));
+            mWebAuthDialog->mDescription->setText(tr("Set new PIN for your security key"));
         } else {
-            uiWebAuthDialog->m_headingLabel->setText(tr("Change PIN Required"));
-            uiWebAuthDialog->m_description->setText(tr("Change PIN for your security key"));
+            mWebAuthDialog->mHeadingLabel->setText(tr("Change PIN Required"));
+            mWebAuthDialog->mDescription->setText(tr("Change PIN for your security key"));
         }
-        uiWebAuthDialog->m_confirmPinLabel->setVisible(true);
-        uiWebAuthDialog->m_confirmPinLineEdit->setVisible(true);
+        mWebAuthDialog->mConfirmPinLabel->setVisible(true);
+        mWebAuthDialog->mConfirmPinLineEdit->setVisible(true);
     }
 
     QString errorDetails;
@@ -182,24 +182,24 @@ void WebAuthDialog::setupCollectPinUI()
         errorDetails += tr(" ") + QString::number(pinRequestInfo.remainingAttempts)
                 + tr(" attempts remaining");
     }
-    uiWebAuthDialog->m_pinEntryErrorLabel->setText(errorDetails);
+    mWebAuthDialog->mPinEntryErrorLabel->setText(errorDetails);
 }
 
 void WebAuthDialog::onCancelRequest()
 {
-    uxRequest->cancel();
+    UxRequest->cancel();
 }
 
 void WebAuthDialog::onAcceptRequest()
 {
-    switch (uxRequest->state()) {
+    switch (UxRequest->state()) {
     case QWebEngineWebAuthUxRequest::WebAuthUxState::SelectAccount:
-        if (buttonGroup->checkedButton()) {
-            uxRequest->setSelectedAccount(buttonGroup->checkedButton()->text());
+        if (ButtonGroup->checkedButton()) {
+            UxRequest->setSelectedAccount(ButtonGroup->checkedButton()->text());
         }
         break;
     case QWebEngineWebAuthUxRequest::WebAuthUxState::CollectPin:
-        uxRequest->setPin(uiWebAuthDialog->m_pinLineEdit->text());
+        UxRequest->setPin(mWebAuthDialog->mPinLineEdit->text());
         break;
     default:
         break;
@@ -212,7 +212,7 @@ void WebAuthDialog::setupErrorUI()
     QString errorDescription;
     QString errorHeading = tr("Something went wrong");
     bool isVisibleRetry = false;
-    switch (uxRequest->requestFailureReason()) {
+    switch (UxRequest->requestFailureReason()) {
     case QWebEngineWebAuthUxRequest::RequestFailureReason::Timeout:
         errorDescription = tr("Request Timeout");
         break;
@@ -262,32 +262,32 @@ void WebAuthDialog::setupErrorUI()
         break;
     }
 
-    uiWebAuthDialog->m_headingLabel->setText(errorHeading);
-    uiWebAuthDialog->m_description->setText(errorDescription);
-    uiWebAuthDialog->m_description->adjustSize();
-    uiWebAuthDialog->m_pinGroupBox->setVisible(false);
-    uiWebAuthDialog->buttonBox->button(QDialogButtonBox::Ok)->setVisible(false);
-    uiWebAuthDialog->buttonBox->button(QDialogButtonBox::Retry)->setVisible(isVisibleRetry);
+    mWebAuthDialog->mHeadingLabel->setText(errorHeading);
+    mWebAuthDialog->mDescription->setText(errorDescription);
+    mWebAuthDialog->mDescription->adjustSize();
+    mWebAuthDialog->mPinGroupBox->setVisible(false);
+    mWebAuthDialog->mButtonBox->button(QDialogButtonBox::Ok)->setVisible(false);
+    mWebAuthDialog->mButtonBox->button(QDialogButtonBox::Retry)->setVisible(isVisibleRetry);
     if (isVisibleRetry)
-        uiWebAuthDialog->buttonBox->button(QDialogButtonBox::Retry)->setFocus();
-    uiWebAuthDialog->buttonBox->button(QDialogButtonBox::Cancel)->setVisible(true);
-    uiWebAuthDialog->buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("Close"));
-    scrollArea->setVisible(false);
+        mWebAuthDialog->mButtonBox->button(QDialogButtonBox::Retry)->setFocus();
+    mWebAuthDialog->mButtonBox->button(QDialogButtonBox::Cancel)->setVisible(true);
+    mWebAuthDialog->mButtonBox->button(QDialogButtonBox::Cancel)->setText(tr("Close"));
+    ScrollArea->setVisible(false);
 }
 
 void WebAuthDialog::onRetry()
 {
-    uxRequest->retry();
+    UxRequest->retry();
 }
 
 void WebAuthDialog::clearSelectAccountButtons()
 {
-    QList<QAbstractButton *> buttons = buttonGroup->buttons();
+    QList<QAbstractButton *> buttons = ButtonGroup->buttons();
     auto itr = buttons.begin();
     while (itr != buttons.end()) {
         QAbstractButton *radioButton = *itr;
-        selectAccountLayout->removeWidget(radioButton);
-        buttonGroup->removeButton(radioButton);
+        SelectAccountLayout->removeWidget(radioButton);
+        ButtonGroup->removeButton(radioButton);
         delete radioButton;
         itr++;
     }

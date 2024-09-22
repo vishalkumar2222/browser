@@ -1,8 +1,4 @@
-// Copyright (C) 2016 The Qt Company Ltd.
-// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
-
-#ifndef TABWIDGET_H
-#define TABWIDGET_H
+#pragma once
 
 #include <QTabWidget>
 #include <QWebEngineFindTextResult>
@@ -21,43 +17,39 @@ class TabWidget : public QTabWidget
 public:
     explicit TabWidget(QWebEngineProfile *profile, QWidget *parent = nullptr);
 
-    WebView *currentWebView() const;
+    WebView *GetCurrentWebView() const;
 
 signals:
-    // current tab/page signals
-    void linkHovered(const QString &link);
-    void loadProgress(int progress);
-    void titleChanged(const QString &title);
-    void urlChanged(const QUrl &url);
-    void favIconChanged(const QIcon &icon);
-    void webActionEnabledChanged(QWebEnginePage::WebAction action, bool enabled);
-    void devToolsRequested(QWebEnginePage *source);
-    void findTextFinished(const QWebEngineFindTextResult &result);
+    void LinkHovered(const QString &link);
+    void LoadProgress(int progress);
+    void TitleChanged(const QString &title);
+    void UrlChanged(const QUrl &url);
+    void FavIconChanged(const QIcon &icon);
+    void WebActionEnabledChanged(QWebEnginePage::WebAction action, bool enabled);
+    void DevToolsRequested(QWebEnginePage *source);
+    void FindTextFinished(const QWebEngineFindTextResult &result);
 
 public slots:
-    // current tab/page slots
-    void setUrl(const QUrl &url);
-    void triggerWebPageAction(QWebEnginePage::WebAction action);
+    void SetUrl(const QUrl &url);
+    void TriggerWebPageAction(QWebEnginePage::WebAction action);
 
-    WebView *createTab();
-    WebView *createBackgroundTab();
-    void closeTab(int index);
-    void nextTab();
-    void previousTab();
+    WebView *CreateTab();
+    WebView *CreateBackgroundTab();
+    void CloseTab(int index);
+    void NextTab();
+    void PreviousTab();
 
 private slots:
-    void handleCurrentChanged(int index);
-    void handleContextMenuRequested(const QPoint &pos);
-    void cloneTab(int index);
-    void closeOtherTabs(int index);
-    void reloadAllTabs();
-    void reloadTab(int index);
+    void HandleCurrentChanged(int index);
+    void HandleContextMenuRequested(const QPoint &pos);
+    void CloneTab(int index);
+    void CloseOtherTabs(int index);
+    void ReloadAllTabs();
+    void ReloadTab(int index);
 
 private:
-    WebView *webView(int index) const;
-    void setupView(WebView *webView);
+    WebView *GetWebView(int index) const;
+    void SetupView(WebView *webView);
 
     QWebEngineProfile *m_profile;
 };
-
-#endif // TABWIDGET_H

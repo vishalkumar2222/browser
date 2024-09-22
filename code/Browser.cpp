@@ -1,60 +1,53 @@
-// Copyright (C) 2016 The Qt Company Ltd.
-// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
-
-#include "browser.h"
-#include "browserwindow.h"
+#include "Browser.h"
+#include "Browserwindow.h"
 
 #include <QWebEngineSettings>
 
-using namespace Qt::StringLiterals;
-
 Browser::Browser()
 {
-    // Quit application if the download manager window is the only remaining window
-    m_downloadManagerWidget.setAttribute(Qt::WA_QuitOnClose, false);
+    mDownloadManagerWidget.setAttribute(Qt::WA_QuitOnClose, false);
 
-    QObject::connect(
-        QWebEngineProfile::defaultProfile(), &QWebEngineProfile::downloadRequested,
-        &m_downloadManagerWidget, &DownloadManagerWidget::downloadRequested);
+    QObject::connect(QWebEngineProfile::defaultProfile(), &QWebEngineProfile::downloadRequested,
+        &mDownloadManagerWidget, &DownloadManagerWidget::DownloadRequested);
 }
 
-BrowserWindow *Browser::createHiddenWindow(bool offTheRecord)
+BrowserWindow *Browser::CreateHiddenWindow(bool offTheRecord)
 {
-    if (!offTheRecord && !m_profile) {
-        const QString name = u"simplebrowser."_s + QLatin1StringView(qWebEngineChromiumVersion());
-        m_profile.reset(new QWebEngineProfile(name));
-        m_profile->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
-        m_profile->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, true);
-        m_profile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
-        m_profile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessFileUrls, false);
-        m_profile->settings()->setAttribute(QWebEngineSettings::ScreenCaptureEnabled, true);
-        QObject::connect(m_profile.get(), &QWebEngineProfile::downloadRequested,
-                         &m_downloadManagerWidget, &DownloadManagerWidget::downloadRequested);
+    if (!offTheRecord && !mProfile) {
+        const QString name = "OpenBrowser" + QLatin1StringView(qWebEngineChromiumVersion());
+        mProfile.reset(new QWebEngineProfile(name));
+        mProfile->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
+        mProfile->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, true);
+        mProfile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+        mProfile->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessFileUrls, false);
+        mProfile->settings()->setAttribute(QWebEngineSettings::ScreenCaptureEnabled, true);
+        QObject::connect(mProfile.get(), &QWebEngineProfile::downloadRequested,
+                         &mDownloadManagerWidget, &DownloadManagerWidget::DownloadRequested);
     }
-    auto profile = !offTheRecord ? m_profile.get() : QWebEngineProfile::defaultProfile();
+    auto profile = !offTheRecord ? mProfile.get() : QWebEngineProfile::defaultProfile();
     auto mainWindow = new BrowserWindow(this, profile, false);
     profile->setPersistentPermissionsPolicy(QWebEngineProfile::PersistentPermissionsPolicy::AskEveryTime);
-    m_windows.append(mainWindow);
+    mWindows.append(mainWindow);
     QObject::connect(mainWindow, &QObject::destroyed, [this, mainWindow]() {
-        m_windows.removeOne(mainWindow);
+        mWindows.removeOne(mainWindow);
     });
     return mainWindow;
 }
 
-BrowserWindow *Browser::createWindow(bool offTheRecord)
+BrowserWindow *Browser::CreateWindow(bool offTheRecord)
 {
-    auto *mainWindow = createHiddenWindow(offTheRecord);
+    auto *mainWindow = CreateHiddenWindow(offTheRecord);
     mainWindow->show();
     return mainWindow;
 }
 
-BrowserWindow *Browser::createDevToolsWindow()
+BrowserWindow *Browser::CreateDevToolsWindow()
 {
-    auto profile = m_profile ? m_profile.get() : QWebEngineProfile::defaultProfile();
+    auto profile = mProfile ? mProfile.get() : QWebEngineProfile::defaultProfile();
     auto mainWindow = new BrowserWindow(this, profile, true);
-    m_windows.append(mainWindow);
+    mWindows.append(mainWindow);
     QObject::connect(mainWindow, &QObject::destroyed, [this, mainWindow]() {
-        m_windows.removeOne(mainWindow);
+        mWindows.removeOne(mainWindow);
     });
     mainWindow->show();
     return mainWindow;

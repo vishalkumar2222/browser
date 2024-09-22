@@ -1,8 +1,4 @@
-// Copyright (C) 2016 The Qt Company Ltd.
-// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
-
-#ifndef BROWSERWINDOW_H
-#define BROWSERWINDOW_H
+#pragma once
 
 #include <QMainWindow>
 #include <QTime>
@@ -25,46 +21,45 @@ public:
     explicit BrowserWindow(Browser *browser, QWebEngineProfile *profile,
                            bool forDevTools = false);
     QSize sizeHint() const override;
-    TabWidget *tabWidget() const;
-    WebView *currentTab() const;
-    Browser *browser() { return m_browser; }
+    TabWidget *GetTabWidget() const;
+    WebView *GetCurrentTab() const;
+    Browser *GetBrowser() { return mBrowser; }
 
 protected:
     void closeEvent(QCloseEvent *event) override;
 
 private slots:
-    void handleNewWindowTriggered();
-    void handleNewIncognitoWindowTriggered();
-    void handleFileOpenTriggered();
-    void handleFindActionTriggered();
-    void handleShowWindowTriggered();
-    void handleWebViewLoadProgress(int);
-    void handleWebViewTitleChanged(const QString &title);
-    void handleWebActionEnabledChanged(QWebEnginePage::WebAction action, bool enabled);
-    void handleDevToolsRequested(QWebEnginePage *source);
-    void handleFindTextFinished(const QWebEngineFindTextResult &result);
+    void HandleNewWindowTriggered();
+    void HandleNewIncognitoWindowTriggered();
+    void HandleFileOpenTriggered();
+    void HandleFindActionTriggered();
+    void HandleShowWindowTriggered();
+    void HandleWebViewLoadProgress(int);
+    void HandleWebViewTitleChanged(const QString &title);
+    void HandleWebActionEnabledChanged(QWebEnginePage::WebAction action, bool enabled);
+    void HandleDevToolsRequested(QWebEnginePage *source);
+    void HandleFindTextFinished(const QWebEngineFindTextResult &result);
 
 private:
-    QMenu *createFileMenu(TabWidget *tabWidget);
-    QMenu *createEditMenu();
-    QMenu *createViewMenu(QToolBar *toolBar);
-    QMenu *createWindowMenu(TabWidget *tabWidget);
-    QMenu *createHelpMenu();
-    QToolBar *createToolBar();
+    QMenu *CreateFileMenu(TabWidget *tabWidget);
+    QMenu *CreateEditMenu();
+    QMenu *CreateViewMenu(QToolBar *toolBar);
+    QMenu *CreateWindowMenu(TabWidget *tabWidget);
+    QMenu *CreateHelpMenu();
+    QToolBar *CreateToolBar();
 
 private:
-    Browser *m_browser;
-    QWebEngineProfile *m_profile;
-    TabWidget *m_tabWidget;
-    QProgressBar *m_progressBar = nullptr;
-    QAction *m_historyBackAction = nullptr;
-    QAction *m_historyForwardAction = nullptr;
-    QAction *m_stopAction = nullptr;
-    QAction *m_reloadAction = nullptr;
-    QAction *m_stopReloadAction = nullptr;
-    QLineEdit *m_urlLineEdit = nullptr;
-    QAction *m_favAction = nullptr;
-    QString m_lastSearch;
+    Browser *mBrowser;
+    QWebEngineProfile *mProfile;
+    TabWidget *mTabWidget;
+    QProgressBar *mProgressBar = nullptr;
+    QAction *mHistoryBackAction = nullptr;
+    QAction *mHistoryForwardAction = nullptr;
+    QAction *mStopAction = nullptr;
+    QAction *mReloadAction = nullptr;
+    QAction *mStopReloadAction = nullptr;
+    QLineEdit *mUrlLineEdit = nullptr;
+    QAction *mFavAction = nullptr;
+    QString mLastSearch;
 };
 
-#endif // BROWSERWINDOW_H

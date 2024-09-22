@@ -1,8 +1,4 @@
-// Copyright (C) 2016 The Qt Company Ltd.
-// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
-
-#ifndef WEBPOPUPWINDOW_H
-#define WEBPOPUPWINDOW_H
+#pragma once
 
 #include <QWidget>
 
@@ -20,14 +16,13 @@ class WebPopupWindow : public QWidget
 
 public:
     explicit WebPopupWindow(QWebEngineProfile *profile);
-    WebView *view() const;
+    WebView *View() const;
 
 private slots:
-    void handleGeometryChangeRequested(const QRect &newGeometry);
+    void HandleGeometryChangeRequested(const QRect &newGeometry);
 
 private:
-    QLineEdit *m_urlLineEdit;
-    QAction *m_favAction;
-    WebView *m_view;
+    QLineEdit *mUrlLineEdit;
+    QAction *mFavAction;
+    WebView *mView;
 };
-#endif // WEBPOPUPWINDOW_H

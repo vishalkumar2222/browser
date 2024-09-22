@@ -1,42 +1,92 @@
-// Copyright (C) 2017 The Qt Company Ltd.
-// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
-
-#include "downloadwidget.h"
+#include "DownloadWidget.h"
 
 #include <QFileInfo>
 #include <QUrl>
 #include <QWebEngineDownloadRequest>
 
-using namespace Qt::StringLiterals;
-
 DownloadWidget::DownloadWidget(QWebEngineDownloadRequest *download, QWidget *parent)
     : QFrame(parent)
-    , m_download(download)
-    , m_timeAdded()
+    , mDownload(download)
+    , mTimeAdded()
 {
-    m_timeAdded.start();
-    setupUi(this);
-    m_dstName->setText(m_download->downloadFileName());
-    m_srcUrl->setText(m_download->url().toDisplayString());
+    mTimeAdded.start();
+	Initialize();
+    mDstName->setText(mDownload->downloadFileName());
+    mSrcUrl->setText(mDownload->url().toDisplayString());
 
-    connect(m_cancelButton, &QPushButton::clicked,
+    connect(mCancelButton, &QPushButton::clicked,
             [this](bool) {
-        if (m_download->state() == QWebEngineDownloadRequest::DownloadInProgress)
-            m_download->cancel();
+        if (mDownload->state() == QWebEngineDownloadRequest::DownloadInProgress)
+            mDownload->cancel();
         else
-            emit removeClicked(this);
+            emit RemoveClicked(this);
     });
 
-    connect(m_download, &QWebEngineDownloadRequest::totalBytesChanged, this, &DownloadWidget::updateWidget);
-    connect(m_download, &QWebEngineDownloadRequest::receivedBytesChanged, this, &DownloadWidget::updateWidget);
+    connect(mDownload, &QWebEngineDownloadRequest::totalBytesChanged, this, &DownloadWidget::UpdateWidget);
+    connect(mDownload, &QWebEngineDownloadRequest::receivedBytesChanged, this, &DownloadWidget::UpdateWidget);
 
-    connect(m_download, &QWebEngineDownloadRequest::stateChanged,
-            this, &DownloadWidget::updateWidget);
+    connect(mDownload, &QWebEngineDownloadRequest::stateChanged,
+            this, &DownloadWidget::UpdateWidget);
 
-    updateWidget();
+    UpdateWidget();
 }
 
-inline QString DownloadWidget::withUnit(qreal bytes)
+void DownloadWidget::Initialize()
+{
+    this->setStyleSheet(QString::fromUtf8("#DownloadWidget {\n"
+        "  background: palette(button);\n"
+        "  border: 1px solid palette(dark);\n"
+        "  margin: 0px;\n"
+        "}"));
+    mTopLevelLayout = new QGridLayout(this);
+    mTopLevelLayout->setObjectName("mTopLevelLayout");
+    mTopLevelLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);
+    mDstName = new QLabel(this);
+    mDstName->setObjectName("mDstName");
+    mDstName->setStyleSheet(QString::fromUtf8("font-weight: bold\n"
+        ""));
+
+    mTopLevelLayout->addWidget(mDstName, 0, 0, 1, 1);
+
+    mCancelButton = new QPushButton(this);
+    mCancelButton->setObjectName("mCancelButton");
+    QSizePolicy sizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
+    sizePolicy.setHorizontalStretch(0);
+    sizePolicy.setVerticalStretch(0);
+    sizePolicy.setHeightForWidth(mCancelButton->sizePolicy().hasHeightForWidth());
+    mCancelButton->setSizePolicy(sizePolicy);
+    mCancelButton->setStyleSheet(QString::fromUtf8("QPushButton {\n"
+        "  margin: 1px;\n"
+        "  border: none;\n"
+        "}\n"
+        "QPushButton:pressed {\n"
+        "  margin: none;\n"
+        "  border: 1px solid palette(shadow);\n"
+        "  background: palette(midlight);\n"
+        "}"));
+    mCancelButton->setFlat(false);
+
+    mTopLevelLayout->addWidget(mCancelButton, 0, 1, 1, 1);
+
+    mSrcUrl = new QLabel(this);
+    mSrcUrl->setObjectName("mSrcUrl");
+    mSrcUrl->setMaximumSize(QSize(350, 16777215));
+    mSrcUrl->setStyleSheet(QString::fromUtf8(""));
+
+    mTopLevelLayout->addWidget(mSrcUrl, 1, 0, 1, 2);
+
+    mProgressBar = new QProgressBar(this);
+    mProgressBar->setObjectName("mProgressBar");
+    mProgressBar->setStyleSheet(QString::fromUtf8("font-size: 12px"));
+    mProgressBar->setValue(24);
+
+    mTopLevelLayout->addWidget(mProgressBar, 2, 0, 1, 2);
+
+    mDstName->setText("TextLabel");
+    mSrcUrl->setText("TextLabel");
+}
+
+inline QString DownloadWidget::WithUnit(qreal bytes)
 {
     if (bytes < (1 << 10))
         return tr("%L1 B").arg(bytes);
@@ -47,65 +97,65 @@ inline QString DownloadWidget::withUnit(qreal bytes)
     return tr("%L1 GiB").arg(bytes / (1 << 30), 0, 'f', 2);
 }
 
-void DownloadWidget::updateWidget()
+void DownloadWidget::UpdateWidget()
 {
-    qreal totalBytes = m_download->totalBytes();
-    qreal receivedBytes = m_download->receivedBytes();
-    qreal bytesPerSecond = receivedBytes / m_timeAdded.elapsed() * 1000;
+    qreal totalBytes = mDownload->totalBytes();
+    qreal receivedBytes = mDownload->receivedBytes();
+    qreal bytesPerSecond = receivedBytes / mTimeAdded.elapsed() * 1000;
 
-    auto state = m_download->state();
+    auto state = mDownload->state();
     switch (state) {
     case QWebEngineDownloadRequest::DownloadRequested:
         Q_UNREACHABLE();
         break;
     case QWebEngineDownloadRequest::DownloadInProgress:
         if (totalBytes > 0) {
-            m_progressBar->setValue(qRound(100 * receivedBytes / totalBytes));
-            m_progressBar->setDisabled(false);
-            m_progressBar->setFormat(
+            mProgressBar->setValue(qRound(100 * receivedBytes / totalBytes));
+            mProgressBar->setDisabled(false);
+            mProgressBar->setFormat(
                 tr("%p% - %1 of %2 downloaded - %3/s")
-                .arg(withUnit(receivedBytes), withUnit(totalBytes),
-                     withUnit(bytesPerSecond)));
+                .arg(WithUnit(receivedBytes), WithUnit(totalBytes),
+                     WithUnit(bytesPerSecond)));
         } else {
-            m_progressBar->setValue(0);
-            m_progressBar->setDisabled(false);
-            m_progressBar->setFormat(
+            mProgressBar->setValue(0);
+            mProgressBar->setDisabled(false);
+            mProgressBar->setFormat(
                 tr("unknown size - %1 downloaded - %2/s")
-                .arg(withUnit(receivedBytes), withUnit(bytesPerSecond)));
+                .arg(WithUnit(receivedBytes), WithUnit(bytesPerSecond)));
         }
         break;
     case QWebEngineDownloadRequest::DownloadCompleted:
-        m_progressBar->setValue(100);
-        m_progressBar->setDisabled(true);
-        m_progressBar->setFormat(
+        mProgressBar->setValue(100);
+        mProgressBar->setDisabled(true);
+        mProgressBar->setFormat(
             tr("completed - %1 downloaded - %2/s")
-            .arg(withUnit(receivedBytes), withUnit(bytesPerSecond)));
+            .arg(WithUnit(receivedBytes), WithUnit(bytesPerSecond)));
         break;
     case QWebEngineDownloadRequest::DownloadCancelled:
-        m_progressBar->setValue(0);
-        m_progressBar->setDisabled(true);
-        m_progressBar->setFormat(
+        mProgressBar->setValue(0);
+        mProgressBar->setDisabled(true);
+        mProgressBar->setFormat(
             tr("cancelled - %1 downloaded - %2/s")
-            .arg(withUnit(receivedBytes), withUnit(bytesPerSecond)));
+            .arg(WithUnit(receivedBytes), WithUnit(bytesPerSecond)));
         break;
     case QWebEngineDownloadRequest::DownloadInterrupted:
-        m_progressBar->setValue(0);
-        m_progressBar->setDisabled(true);
-        m_progressBar->setFormat(
+        mProgressBar->setValue(0);
+        mProgressBar->setDisabled(true);
+        mProgressBar->setFormat(
             tr("interrupted: %1")
-            .arg(m_download->interruptReasonString()));
+            .arg(mDownload->interruptReasonString()));
         break;
     }
 
     if (state == QWebEngineDownloadRequest::DownloadInProgress) {
         static QIcon cancelIcon(QIcon::fromTheme(QIcon::ThemeIcon::ProcessStop,
-                                                 QIcon(":process-stop.png"_L1)));
-        m_cancelButton->setIcon(cancelIcon);
-        m_cancelButton->setToolTip(tr("Stop downloading"));
+                                                 QIcon(":process-stop.png")));
+        mCancelButton->setIcon(cancelIcon);
+        mCancelButton->setToolTip(tr("Stop downloading"));
     } else {
         static QIcon removeIcon(QIcon::fromTheme(QIcon::ThemeIcon::EditClear,
-                                                 QIcon(":edit-clear.png"_L1)));
-        m_cancelButton->setIcon(removeIcon);
-        m_cancelButton->setToolTip(tr("Remove from list"));
+                                                 QIcon(":edit-clear.png")));
+        mCancelButton->setIcon(removeIcon);
+        mCancelButton->setToolTip(tr("Remove from list"));
     }
 }

@@ -1,8 +1,4 @@
-// Copyright (C) 2016 The Qt Company Ltd.
-// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
-
-#ifndef WEBVIEW_H
-#define WEBVIEW_H
+#pragma once
 
 #include <QIcon>
 #include <QWebEngineView>
@@ -27,41 +23,39 @@ class WebView : public QWebEngineView
 public:
     explicit WebView(QWidget *parent = nullptr);
     ~WebView();
-    void setPage(WebPage *page);
+    void SetPage(WebPage *page);
 
-    int loadProgress() const;
-    bool isWebActionEnabled(QWebEnginePage::WebAction webAction) const;
-    QIcon favIcon() const;
+    int LoadProgress() const;
+    bool IsWebActionEnabled(QWebEnginePage::WebAction webAction) const;
+    QIcon FavIcon() const;
 
 protected:
     void contextMenuEvent(QContextMenuEvent *event) override;
     QWebEngineView *createWindow(QWebEnginePage::WebWindowType type) override;
 
 signals:
-    void webActionEnabledChanged(QWebEnginePage::WebAction webAction, bool enabled);
-    void favIconChanged(const QIcon &icon);
-    void devToolsRequested(QWebEnginePage *source);
+    void WebActionEnabledChanged(QWebEnginePage::WebAction webAction, bool enabled);
+    void FavIconChanged(const QIcon &icon);
+    void DevToolsRequested(QWebEnginePage *source);
 private slots:
-    void handleCertificateError(QWebEngineCertificateError error);
-    void handleAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth);
-    void handlePermissionRequested(QWebEnginePermission permission);
-    void handleProxyAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth,
+    void HandleCertificateError(QWebEngineCertificateError error);
+    void HandleAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth);
+    void HandlePermissionRequested(QWebEnginePermission permission);
+    void HandleProxyAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth,
                                            const QString &proxyHost);
-    void handleRegisterProtocolHandlerRequested(QWebEngineRegisterProtocolHandlerRequest request);
+    void HandleRegisterProtocolHandlerRequested(QWebEngineRegisterProtocolHandlerRequest request);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
-    void handleFileSystemAccessRequested(QWebEngineFileSystemAccessRequest request);
-    void handleWebAuthUxRequested(QWebEngineWebAuthUxRequest *request);
+    void HandleFileSystemAccessRequested(QWebEngineFileSystemAccessRequest request);
+    void HandleWebAuthUxRequested(QWebEngineWebAuthUxRequest *request);
 #endif
-    void handleImageAnimationPolicyChange(QWebEngineSettings::ImageAnimationPolicy policy);
+    void HandleImageAnimationPolicyChange(QWebEngineSettings::ImageAnimationPolicy policy);
 
 private:
-    void createWebActionTrigger(QWebEnginePage *page, QWebEnginePage::WebAction);
-    void onStateChanged(QWebEngineWebAuthUxRequest::WebAuthUxState state);
+    void CreateWebActionTrigger(QWebEnginePage *page, QWebEnginePage::WebAction);
+    void OnStateChanged(QWebEngineWebAuthUxRequest::WebAuthUxState state);
 
 private:
-    int m_loadProgress = 100;
-    WebAuthDialog *m_authDialog = nullptr;
-    QActionGroup *m_imageAnimationGroup = nullptr;
+    int mLoadProgress = 100;
+    WebAuthDialog *mAuthDialog = nullptr;
+    QActionGroup *mImageAnimationGroup = nullptr;
 };
-
-#endif
