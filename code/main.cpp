@@ -13,12 +13,14 @@ QUrl CommandLineUrlArgument() {
 		if (!arg.startsWith(QLatin1Char('-')))
 			return QUrl::fromUserInput(arg);
 	}
-	return QUrl("chrome://qt");
+	return QUrl("www.google.com");
 }
 
 int main(int argc, char** argv){
     QApplication app(argc, argv);
-	QLoggingCategory::setFilterRules(QStringLiteral("qt.network.ssl.warning=false"));
+	app.setWindowIcon(QIcon(QStringLiteral(":AppLogoColor.png")));
+	QLoggingCategory::setFilterRules(QStringLiteral("qt.webenginecontext.debug=false"));
+
     QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
     QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, true);
     QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::ScreenCaptureEnabled, true);
@@ -26,7 +28,7 @@ int main(int argc, char** argv){
 	QUrl url = CommandLineUrlArgument();
 
     Browser browser;
-	BrowserWindow* window = browser.CreateHiddenWindow(false);
+	BrowserWindow* window = browser.CreateHiddenWindow();
 	window->GetTabWidget()->SetUrl(url);
     window->show();
     return app.exec();
